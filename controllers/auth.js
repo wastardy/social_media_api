@@ -46,6 +46,7 @@ export const login = (req, res) => {
 
     db.query(q, [req.body.username], (err, data) => {
         if (err) {
+            console.error(err);
             return res.status(500).json(err);
         }
 
