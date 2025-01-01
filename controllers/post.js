@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import moment from 'moment';
 
 export const getPosts = (req, res) => {
+    const userId = req.query.userId;
     const token = req.cookies.accessToken;
 
     if (!token) {
@@ -14,18 +15,39 @@ export const getPosts = (req, res) => {
             return res.status(403).json('token is not valid');
         }
 
-        const q = 
-            `SELECT p.*, u.id AS user_id, name, profile_picture 
-            FROM posts AS p 
-            JOIN users AS u 
-                ON (u.id = p.user_id)
-            LEFT JOIN relationships AS r 
-                ON p.user_id = r.followed_user_id
-            WHERE r.follower_user_id = ? 
-                OR p.user_id = ?
-            ORDER BY p.created_at DESC`;
+        /*
+            userId !== 'undefined' 
+            ? `SELECT p.*, u.id AS user_id, name, profile_picture
+                FROM posts AS p
+                JOIN users AS u
+                    ON (u.id = p.user_id)
+                WHERE p.user_id = ?
+                ORDER BY p.created_at DESC`
 
-        db.query(q, [userInfo.id, userInfo.id], (err, data) => {
+            :
+        */
+        const q = 
+        userId !== 'undefined' 
+            ? `SELECT p.*, u.id AS user_id, name, profile_picture
+                FROM posts AS p
+                JOIN users AS u
+                    ON (u.id = p.user_id)
+                WHERE p.user_id = ?
+                ORDER BY p.created_at DESC`
+
+            : `SELECT p.*, u.id AS user_id, name, profile_picture 
+                FROM posts AS p 
+                JOIN users AS u 
+                    ON (u.id = p.user_id)
+                LEFT JOIN relationships AS r 
+                    ON (p.user_id = r.followed_user_id)
+                WHERE r.follower_user_id = ? 
+                    OR p.user_id = ?
+                ORDER BY p.created_at DESC`;
+
+        const values = userId ? [userId] : [userInfo.id, userInfo.id]
+
+        db.query(q, values, (err, data) => {
             if (err) {
                 return res.status(500).json(err);
             }
